@@ -1,0 +1,88 @@
+
+
+$('#issued_tenant_address').autocomplete({
+    minLength: 0,
+    source  :   function( request, response ) {
+        $.ajax({
+            url : URL,
+            data:{
+                term:request.term,
+            },
+            dataType:"json",
+            success:function(data) {
+                response( $.map( data, function( obj ) {
+                    return {
+                        label   :   obj.label,
+                        value   :   obj.label,
+                        value1   :   obj.value,
+                    };
+                } ) );
+            }
+        });
+    },
+    select: function(event, ui) {
+        $('#issued_tenant_address_id').val(ui.item.value1).trigger("hidden-change");
+    }
+}).autocomplete('widget').appendTo('.issued_tenant_address_appentTo').css("position", "static");
+
+$('#issued_tenant_address').on('blur, change', function() {
+    if($(this).val() == ''){
+        $('#issued_tenant_address_id').val('');
+    }
+});
+
+$('#confirm-issue-to-contractor').validate({
+    ignore: [],
+    rules: {
+        issued_tenant_address : {
+            required: true,
+        },
+        issued_tenant_address_id : {
+            required: function (element) {
+                if($("#issued_tenant_address").val().length > 0){
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+        }
+    },
+    messages: {
+        issued_tenant_address : {
+            required: 'This field is required.',
+        },
+        issued_tenant_address_id : {
+            required: 'Please search and select address.',
+        }
+    },
+    submitHandler: function(form){
+        
+        var formArray = $("#confirm-issue-to-contractor").serializeArray();
+        var formData = new FormData();
+        $.each(formArray, function(i, field){
+            formData.append(field.name,field.value);
+        });
+        $('#send-confirmation-to-contractor').attr('disabled','disabled');
+
+        $.ajax({
+            type        : 'post', // define the type of HTTP verb we want to use POST
+            url         : // the url where we want to POST
+            data        : formData, // our data object
+            dataType    : 'json',
+            contentType : false, 
+            cache       : false,
+            processData : false,
+            success : function(data){
+                if(data.status && data.status == 200){
+                    toastr.success(data.mesg);
+                }else{
+                    toastr.error(data.mesg);
+                }
+                confirmedIssueTable.draw();
+                $("#approve_confirmed_issue").modal('hide');
+            }
+        });
+        
+        return false;
+    }
+});
